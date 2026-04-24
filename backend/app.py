@@ -1,27 +1,28 @@
 import warnings
 warnings.filterwarnings("ignore", message="resource_tracker: There appear to be.*")
 
+import uuid
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 import os
 
 from config import config
 from rag_system import RAGSystem
-
-# Initialize FastAPI app
-app = FastAPI(title="Course Materials RAG System", root_path="")
-
-# Add trusted host middleware for proxy
-app.add_middleware(
-    TrustedHostMiddleware,
-    allowed_hosts=["*"]
+from checkers_game import (
+    initial_board, get_all_legal_moves, get_legal_moves_for_piece,
+    check_winner, board_to_str,
 )
+from checkers_ai import get_ai_move, get_best_red_move
+from checkers_tutor import analyze_move, answer_question
 
-# Enable CORS with proper settings for proxy
+app = FastAPI(title="Checkers Tutor", root_path="")
+
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -31,89 +32,220 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
-# Initialize RAG system
 rag_system = RAGSystem(config)
 
-# Pydantic models for request/response
+# ── in-memory game sessions ──────────────────────────────────────────────────
+# session_id -> {board, difficulty}
+_sessions: Dict[str, Dict[str, Any]] = {}
+
+
+def _session(session_id: str) -> Dict[str, Any]:
+    s = _sessions.get(session_id)
+    if not s:
+        raise HTTPException(status_code=404, detail="Session not found. Start a new game first.")
+    return s
+
+
+# ── Request / Response models ────────────────────────────────────────────────
+
+class NewGameRequest(BaseModel):
+    difficulty: str = "medium"
+    session_id: Optional[str] = None
+
+class NewGameResponse(BaseModel):
+    session_id: str
+    board: List[List[int]]
+    message: str
+
+class LegalMovesRequest(BaseModel):
+    session_id: str
+    row: int
+    col: int
+
+class MoveRequest(BaseModel):
+    session_id: str
+    from_row: int
+    from_col: int
+    to_row: int
+    to_col: int
+
+class MoveResponse(BaseModel):
+    valid: bool
+    message: str
+    board: List[List[int]]
+    ai_board: Optional[List[List[int]]] = None
+    ai_move: Optional[Dict] = None
+    tutor_feedback: str = ""
+    winner: Optional[str] = None
+
+class HintRequest(BaseModel):
+    session_id: str
+
+class HintResponse(BaseModel):
+    from_pos: List[int]
+    to_pos: List[int]
+    message: str
+
+class AskRequest(BaseModel):
+    question: str
+    session_id: Optional[str] = None
+
 class QueryRequest(BaseModel):
-    """Request model for course queries"""
     query: str
     session_id: Optional[str] = None
 
 class QueryResponse(BaseModel):
-    """Response model for course queries"""
     answer: str
     sources: List[str]
     session_id: str
 
-class CourseStats(BaseModel):
-    """Response model for course statistics"""
-    total_courses: int
-    course_titles: List[str]
 
-# API Endpoints
+# ── Checkers endpoints ────────────────────────────────────────────────────────
+
+@app.post("/api/checkers/new_game", response_model=NewGameResponse)
+async def new_game(req: NewGameRequest):
+    sid = req.session_id or str(uuid.uuid4())
+    board = initial_board()
+    _sessions[sid] = {"board": board, "difficulty": req.difficulty}
+    return NewGameResponse(
+        session_id=sid,
+        board=board,
+        message="New game started! You play as red (bottom). Make your move.",
+    )
+
+
+@app.post("/api/checkers/legal_moves")
+async def legal_moves(req: LegalMovesRequest):
+    s = _session(req.session_id)
+    moves = get_legal_moves_for_piece(s["board"], req.row, req.col, red_turn=True)
+    return {"moves": [{"to": m["to"], "captured": m["captured"]} for m in moves]}
+
+
+@app.post("/api/checkers/move", response_model=MoveResponse)
+async def make_move(req: MoveRequest):
+    s = _session(req.session_id)
+    board = s["board"]
+
+    # Find the matching legal move
+    all_moves = get_all_legal_moves(board, red_turn=True)
+    matching = [
+        m for m in all_moves
+        if m["from"] == [req.from_row, req.from_col]
+        and m["to"]   == [req.to_row,   req.to_col]
+    ]
+
+    if not matching:
+        return MoveResponse(valid=False, message="Illegal move.", board=board)
+
+    move = matching[0]
+    board_after_human = move["board"]
+
+    # Tutor feedback on the human's move
+    feedback = analyze_move(
+        rag_system.ai_generator.client,
+        config.ANTHROPIC_MODEL,
+        board,
+        move,
+    )
+
+    # Check if red already won (black has no moves)
+    winner = check_winner(board_after_human, red_turn=False)
+    if winner == "red":
+        s["board"] = board_after_human
+        return MoveResponse(
+            valid=True, message="You win!",
+            board=board_after_human, tutor_feedback=feedback, winner="red",
+        )
+
+    # AI makes its move
+    ai_move = get_ai_move(board_after_human, s["difficulty"])
+    if not ai_move:
+        s["board"] = board_after_human
+        return MoveResponse(
+            valid=True, message="AI has no moves — you win!",
+            board=board_after_human, tutor_feedback=feedback, winner="red",
+        )
+
+    ai_board = ai_move["board"]
+
+    winner = check_winner(ai_board, red_turn=True)
+    s["board"] = ai_board
+
+    return MoveResponse(
+        valid=True,
+        message="AI moved.",
+        board=board_after_human,
+        ai_board=ai_board,
+        ai_move={"from": ai_move["from"], "to": ai_move["to"], "captured": ai_move["captured"]},
+        tutor_feedback=feedback,
+        winner=winner,
+    )
+
+
+@app.post("/api/checkers/hint", response_model=HintResponse)
+async def hint(req: HintRequest):
+    s = _session(req.session_id)
+    best = get_best_red_move(s["board"], depth=3)
+    if not best:
+        return HintResponse(from_pos=[], to_pos=[], message="No moves available.")
+    return HintResponse(
+        from_pos=best["from"],
+        to_pos=best["to"],
+        message=f"Try moving from {best['from']} to {best['to']}.",
+    )
+
+
+@app.post("/api/checkers/ask")
+async def checkers_ask(req: AskRequest):
+    s = _sessions.get(req.session_id or "")
+    board = s["board"] if s else None
+    answer = answer_question(
+        rag_system.ai_generator.client,
+        config.ANTHROPIC_MODEL,
+        req.question,
+        board,
+    )
+    return {"answer": answer}
+
+
+# ── Legacy RAG endpoint (kept for compatibility) ─────────────────────────────
 
 @app.post("/api/query", response_model=QueryResponse)
 async def query_documents(request: QueryRequest):
-    """Process a query and return response with sources"""
     try:
-        # Create session if not provided
         session_id = request.session_id
         if not session_id:
             session_id = rag_system.session_manager.create_session()
-        
-        # Process query using RAG system
         answer, sources = rag_system.query(request.query, session_id)
-        
-        return QueryResponse(
-            answer=answer,
-            sources=sources,
-            session_id=session_id
-        )
+        return QueryResponse(answer=answer, sources=sources, session_id=session_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/courses", response_model=CourseStats)
-async def get_course_stats():
-    """Get course analytics and statistics"""
-    try:
-        analytics = rag_system.get_course_analytics()
-        return CourseStats(
-            total_courses=analytics["total_courses"],
-            course_titles=analytics["course_titles"]
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+# ── Startup ───────────────────────────────────────────────────────────────────
 
 @app.on_event("startup")
 async def startup_event():
-    """Load initial documents on startup"""
     docs_path = "../docs"
     if os.path.exists(docs_path):
-        print("Loading initial documents...")
+        print("Loading knowledge base documents...")
         try:
             courses, chunks = rag_system.add_course_folder(docs_path, clear_existing=False)
-            print(f"Loaded {courses} courses with {chunks} chunks")
+            print(f"Loaded {courses} documents with {chunks} chunks")
         except Exception as e:
             print(f"Error loading documents: {e}")
 
-# Custom static file handler with no-cache headers for development
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
-import os
-from pathlib import Path
 
+# ── Static files ──────────────────────────────────────────────────────────────
 
 class DevStaticFiles(StaticFiles):
     async def get_response(self, path: str, scope):
         response = await super().get_response(path, scope)
         if isinstance(response, FileResponse):
-            # Add no-cache headers for development
             response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
             response.headers["Pragma"] = "no-cache"
             response.headers["Expires"] = "0"
         return response
-    
-    
-# Serve static files for the frontend
+
+
 app.mount("/", StaticFiles(directory="../frontend", html=True), name="static")

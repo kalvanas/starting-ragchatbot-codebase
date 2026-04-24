@@ -1,0 +1,54 @@
+CHECKERS RULES AND FUNDAMENTALS
+================================
+
+OVERVIEW
+Checkers (also called Draughts) is a two-player strategy board game played on an 8x8 board. Players move disc-shaped pieces diagonally and try to capture all of the opponent's pieces.
+
+THE BOARD
+- 8x8 grid, 64 squares total
+- Only the dark squares are used (32 playable squares)
+- Each player starts with 12 pieces placed on their three nearest rows of dark squares
+
+PIECES
+- Regular piece (man): Can only move forward diagonally
+- King: Crowned when a man reaches the opponent's back row; can move both forward and backward diagonally
+
+MOVEMENT RULES
+1. Pieces move diagonally to an adjacent empty dark square
+2. Regular men can only move forward (toward opponent's side)
+3. Kings can move in any diagonal direction (forward or backward)
+4. Only one square per move (unless capturing)
+
+CAPTURING RULES
+1. A piece captures by jumping over an adjacent opponent's piece to a vacant square immediately beyond it
+2. Captured pieces are removed from the board at the end of the turn
+3. MANDATORY CAPTURE: If a capture is available, the player MUST capture — you cannot choose to make a simple move instead
+4. MULTIPLE JUMPS: If a piece lands in a position where it can capture again, it must continue jumping in the same turn
+5. You may choose which capture sequence to make if multiple are available
+
+KING PROMOTION
+- A man that reaches the opponent's back row (last row) is crowned a King
+- Place a captured piece on top or mark it to show it is a King
+- A man is crowned even if it reached the back row during a multi-jump; under American rules the jump sequence ends there (the King cannot continue jumping in the same turn)
+
+WINNING THE GAME
+A player wins by:
+1. Capturing all of the opponent's pieces
+2. Blocking all of the opponent's pieces so they cannot move (stalemate)
+
+DRAW CONDITIONS
+- Both players agree to a draw
+- The same position repeats three times
+- No capture or king promotion has occurred in 40 moves (in competitive play)
+
+COMMON MISTAKES TO AVOID
+1. Forgetting that captures are mandatory
+2. Moving a man backward (only kings can do this)
+3. Leaving pieces unprotected near the center early in the game
+4. Neglecting to promote men to kings
+5. Trading pieces when you are ahead in material — avoid unnecessary exchanges
+
+NOTATION (for studying games)
+Squares are numbered 1–32 from black's back row (top-left for black) to red's back row.
+Moves are written as: starting square – ending square (e.g., 11-15)
+Captures: starting square x ending square (e.g., 15x22)

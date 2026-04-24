@@ -1,0 +1,121 @@
+CHECKERS STRATEGY AND TACTICS GUIDE
+=====================================
+
+BEGINNER PRINCIPLES
+
+1. CONTROL THE CENTER
+   - The four central squares give your pieces maximum mobility
+   - Pieces in the center can attack in more directions than edge pieces
+   - Try to occupy or control the center early in the game
+   - Edge pieces ("dogs") are safe from capture but have limited attack options
+
+2. KEEP YOUR BACK ROW INTACT
+   - Your back row prevents the opponent from crowning Kings easily
+   - Don't move back-row pieces unless absolutely necessary
+   - A strong back row is a key defensive resource
+
+3. ADVANCE TOGETHER — DON'T LEAVE STRAGGLERS
+   - Move pieces forward as a connected group rather than one at a time
+   - Isolated pieces are easy targets
+   - Maintain piece coordination so pieces protect each other
+
+4. TRADE WISELY
+   - Avoid exchanges when you are ahead in piece count
+   - Seek exchanges when you are behind (fewer pieces = simpler endgame)
+   - "When ahead, trade pieces; when behind, trade kings" is a useful guideline
+
+5. KING PROMOTION IS POWERFUL
+   - Kings have twice the mobility of regular men
+   - Always aim to crown your men while preventing the opponent from crowning
+   - Block your opponent's path to the king row
+
+---
+
+INTERMEDIATE TACTICS
+
+THE FORK (Double Threat)
+A move that simultaneously threatens to capture two opponent pieces. Forces the opponent to sacrifice one.
+
+THE SHOT (Sacrifice)
+Deliberately offer a piece to set up a multi-jump sequence that gains more pieces in return. Common example: give up one piece to capture two or three opponent pieces.
+
+THE BRIDGE
+A defensive formation with a piece on each of the two back-corner squares. Very hard to break and protects against losing the game by the "last man" tactic.
+
+THE DYKE
+A diagonal chain of two or three pieces that cuts the board in half, restricting opponent movement to one side. A powerful attacking and controlling structure.
+
+THE TRIANGLE
+Three pieces arranged in a triangular formation in the center. Provides strong mutual protection and control.
+
+THE DOUBLE CORNER
+Controlling one of the double-corner squares (squares with access to two different diagonals) gives extra flexibility.
+
+---
+
+OPENING STRATEGY
+
+GENERAL OPENING GOALS
+1. Develop pieces toward the center
+2. Do not advance recklessly into enemy territory without support
+3. Avoid pawn moves that expose your back row
+
+COMMON OPENING PATTERNS
+
+Old Faithful (11-15, 22-18): One of the most common openings. Red advances the center-left piece, Black takes the center-right square. Leads to rich tactical play.
+
+Single Corner (11-15, 23-19): Black holds the corner. Solid and positional.
+
+Cross (11-15, 21-17): Black advances the center-left piece. Creates early tension.
+
+TIPS FOR OPENINGS
+- Mirror your opponent's development when unsure
+- Don't move the same piece twice in the opening without reason
+- Get at least 4-5 pieces developed before committing to a specific plan
+
+---
+
+ENDGAME PRINCIPLES
+
+KINGS DOMINATE ENDGAMES
+- In endgames with few pieces, kings are dramatically stronger than men
+- A King vs. man endgame is almost always won by the side with the King
+- Three kings vs. one king is usually a forced win with correct play
+
+THE OPPOSITION
+- Two kings facing each other diagonally are "in opposition"
+- The king that moves first from the opposition usually loses tempo
+- Understanding the opposition is essential for winning king endgames
+
+LAST-MAN TACTICS
+- If you have the only king on the board, you can often force a win by maneuvering to capture the last opponent pieces
+- The "double corner" defense (two men in opposite corners) can hold a draw against a lone king
+
+PIECE COUNT ADVANTAGE
+- In an even endgame, having even one extra piece is usually decisive
+- Three men vs. two men: the side with three wins with correct play
+- Two men vs. one man: usually a draw unless the single man is trapped
+
+---
+
+COMMON TRAPS
+
+THE GOOSE WALK
+Luring the opponent into a sequence where they think they are winning pieces but end up in a worse position. Involves careful sequencing of captures.
+
+THE SHOT SETUP
+A 3-for-2 or 4-for-2 exchange where you sacrifice pieces to come out ahead in material.
+
+BACK-ROW TRAP
+Forcing the opponent's king to the edge of the board where it has limited escape squares.
+
+---
+
+STUDY TIPS FOR IMPROVING
+
+1. Play slowly — think at least 2 moves ahead before moving
+2. Always ask: "What does my opponent threaten?" before moving
+3. Look for multi-jump opportunities before making any move
+4. Study classic endgame positions (2-piece, 3-piece endgames)
+5. Review games you lose to identify where you went wrong
+6. Practice mandatory capture awareness — it is the #1 beginner error

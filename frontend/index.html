@@ -1,81 +1,80 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    <title>Course Materials Assistant</title>
-    <link rel="stylesheet" href="style.css?v=9">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <title>Checkers Tutor</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Course Materials Assistant</h1>
-            <p class="subtitle">Ask questions about courses, instructors, and content</p>
-        </header>
+  <div class="app">
 
-        <div class="main-content">
-            <!-- Left Sidebar -->
-            <aside class="sidebar">
-                <!-- Course Stats -->
-                <div class="sidebar-section">
-                    <details class="stats-collapsible">
-                        <summary class="stats-header">Courses</summary>
-                        <div class="course-stats" id="courseStats">
-                            <div class="stat-item">
-                                <span class="stat-label">Number of courses:</span>
-                                <span class="stat-value" id="totalCourses">-</span>
-                            </div>
-                            <div class="stat-item">
-                                <div class="course-titles" id="courseTitles">
-                                    <span class="loading">Loading...</span>
-                                </div>
-                            </div>
-                        </div>
-                    </details>
-                </div>
+    <!-- Header -->
+    <header class="header">
+      <h1>Checkers Tutor</h1>
+      <p>Play against AI &amp; get coached by Claude after every move</p>
+    </header>
 
-                <!-- Suggested Questions -->
-                <div class="sidebar-section">
-                    <details class="suggested-collapsible">
-                        <summary class="suggested-header">Try asking:</summary>
-                        <div class="suggested-items">
-                            <button class="suggested-item" data-question="What is the outline of the &quot;MCP: Build Rich-Context AI Apps with Anthropic&quot; course?">Outline of a course</button>
-                            <button class="suggested-item" data-question="Are there any courses that include a Chatbot implementation?">Courses about Chatbot</button>
-                            <button class="suggested-item" data-question="Are there any courses that explain what RAG is?">Courses explaining RAG</button>
-                            <button class="suggested-item" data-question="What was covered in lesson 5 of the MCP course?">Details of a course's lesson</button>
-                        </div>
-                    </details>
-                </div>
-            </aside>
+    <!-- Main layout -->
+    <div class="main">
 
-            <!-- Main Chat Area -->
-            <main class="chat-main">
-                <div class="chat-container">
-                    <div id="chatMessages" class="chat-messages"></div>
-                    <div class="chat-input-container">
-                        <input 
-                            type="text" 
-                            id="chatInput" 
-                            placeholder="Ask about courses, lessons, or specific content..."
-                            autocomplete="off"
-                        >
-                        <button id="sendButton">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="22" y1="2" x2="11" y2="13"></line>
-                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-            </main>
+      <!-- Left: board + controls -->
+      <section class="board-section">
+        <div class="board-wrap">
+          <!-- Row labels left -->
+          <div class="labels-col">
+            <span>0</span><span>1</span><span>2</span><span>3</span>
+            <span>4</span><span>5</span><span>6</span><span>7</span>
+          </div>
+
+          <div id="board" class="board"></div>
+
+          <!-- Col labels bottom -->
         </div>
+        <div class="col-labels">
+          <span>0</span><span>1</span><span>2</span><span>3</span>
+          <span>4</span><span>5</span><span>6</span><span>7</span>
+        </div>
+
+        <!-- Status bar -->
+        <div id="statusBar" class="status-bar">Click "New Game" to start</div>
+
+        <!-- Controls -->
+        <div class="controls">
+          <button id="newGameBtn" class="btn btn-primary">New Game</button>
+          <button id="hintBtn"    class="btn btn-secondary" disabled>Hint</button>
+          <label class="diff-label">
+            Difficulty:
+            <select id="difficulty">
+              <option value="easy">Easy</option>
+              <option value="medium" selected>Medium</option>
+              <option value="hard">Hard</option>
+            </select>
+          </label>
+        </div>
+
+        <!-- Legend -->
+        <div class="legend">
+          <span class="legend-piece red-swatch"></span> You (red, move UP)
+          &nbsp;&nbsp;
+          <span class="legend-piece black-swatch"></span> AI (black, move DOWN)
+        </div>
+      </section>
+
+      <!-- Right: tutor chat -->
+      <section class="chat-section">
+        <div class="chat-header">AI Coach</div>
+        <div id="chatMessages" class="chat-messages"></div>
+        <div class="chat-input-row">
+          <input id="chatInput" type="text" placeholder="Ask a checkers question…" autocomplete="off" />
+          <button id="sendBtn" class="btn btn-primary">Ask</button>
+        </div>
+      </section>
+
     </div>
+  </div>
 
-
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="script.js?v=9"></script>
+  <script src="script.js"></script>
 </body>
 </html>
