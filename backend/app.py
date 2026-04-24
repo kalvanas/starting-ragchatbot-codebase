@@ -149,7 +149,10 @@ async def make_move(req: MoveRequest):
     move = matching[0]
     board_after_human = move["board"]
 
-    feedback = analyze_move(_ai_client, config.ANTHROPIC_MODEL, board, move)
+    try:
+        feedback = analyze_move(_ai_client, config.ANTHROPIC_MODEL, board, move)
+    except Exception:
+        feedback = "Nice move! (Set ANTHROPIC_API_KEY in .env to enable coaching.)"
 
     winner = check_winner(board_after_human, red_turn=False)
     if winner == "red":
@@ -199,7 +202,10 @@ async def hint(req: HintRequest):
 async def checkers_ask(req: AskRequest):
     s = _sessions.get(req.session_id or "")
     board = s["board"] if s else None
-    answer = answer_question(_ai_client, config.ANTHROPIC_MODEL, req.question, board)
+    try:
+        answer = answer_question(_ai_client, config.ANTHROPIC_MODEL, req.question, board)
+    except Exception:
+        answer = "Set ANTHROPIC_API_KEY in a .env file to enable the AI coach."
     return {"answer": answer}
 
 
