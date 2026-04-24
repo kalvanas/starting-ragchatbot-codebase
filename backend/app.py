@@ -2,6 +2,7 @@ import warnings
 warnings.filterwarnings("ignore", message="resource_tracker: There appear to be.*")
 
 import uuid
+import anthropic
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -12,10 +13,9 @@ from typing import List, Optional, Dict, Any
 import os
 
 from config import config
-from rag_system import RAGSystem
 from checkers_game import (
     initial_board, get_all_legal_moves, get_legal_moves_for_piece,
-    check_winner, board_to_str,
+    check_winner,
 )
 from checkers_ai import get_ai_move, get_best_red_move
 from checkers_tutor import analyze_move, answer_question
@@ -32,10 +32,20 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
-rag_system = RAGSystem(config)
+# Anthropic client used by all checkers AI features
+_ai_client = anthropic.Anthropic(api_key=config.ANTHROPIC_API_KEY)
 
-# ── in-memory game sessions ──────────────────────────────────────────────────
-# session_id -> {board, difficulty}
+# RAG system is optional — only needed for the legacy /api/query endpoint
+_rag_system = None
+
+def _get_rag():
+    global _rag_system
+    if _rag_system is None:
+        from rag_system import RAGSystem
+        _rag_system = RAGSystem(config)
+    return _rag_system
+
+# ── In-memory game sessions ──────────────────────────────────────────────────
 _sessions: Dict[str, Dict[str, Any]] = {}
 
 
@@ -126,7 +136,6 @@ async def make_move(req: MoveRequest):
     s = _session(req.session_id)
     board = s["board"]
 
-    # Find the matching legal move
     all_moves = get_all_legal_moves(board, red_turn=True)
     matching = [
         m for m in all_moves
@@ -140,15 +149,8 @@ async def make_move(req: MoveRequest):
     move = matching[0]
     board_after_human = move["board"]
 
-    # Tutor feedback on the human's move
-    feedback = analyze_move(
-        rag_system.ai_generator.client,
-        config.ANTHROPIC_MODEL,
-        board,
-        move,
-    )
+    feedback = analyze_move(_ai_client, config.ANTHROPIC_MODEL, board, move)
 
-    # Check if red already won (black has no moves)
     winner = check_winner(board_after_human, red_turn=False)
     if winner == "red":
         s["board"] = board_after_human
@@ -157,7 +159,6 @@ async def make_move(req: MoveRequest):
             board=board_after_human, tutor_feedback=feedback, winner="red",
         )
 
-    # AI makes its move
     ai_move = get_ai_move(board_after_human, s["difficulty"])
     if not ai_move:
         s["board"] = board_after_human
@@ -167,7 +168,6 @@ async def make_move(req: MoveRequest):
         )
 
     ai_board = ai_move["board"]
-
     winner = check_winner(ai_board, red_turn=True)
     s["board"] = ai_board
 
@@ -199,24 +199,18 @@ async def hint(req: HintRequest):
 async def checkers_ask(req: AskRequest):
     s = _sessions.get(req.session_id or "")
     board = s["board"] if s else None
-    answer = answer_question(
-        rag_system.ai_generator.client,
-        config.ANTHROPIC_MODEL,
-        req.question,
-        board,
-    )
+    answer = answer_question(_ai_client, config.ANTHROPIC_MODEL, req.question, board)
     return {"answer": answer}
 
 
-# ── Legacy RAG endpoint (kept for compatibility) ─────────────────────────────
+# ── Legacy RAG endpoint ───────────────────────────────────────────────────────
 
 @app.post("/api/query", response_model=QueryResponse)
 async def query_documents(request: QueryRequest):
     try:
-        session_id = request.session_id
-        if not session_id:
-            session_id = rag_system.session_manager.create_session()
-        answer, sources = rag_system.query(request.query, session_id)
+        rag = _get_rag()
+        session_id = request.session_id or rag.session_manager.create_session()
+        answer, sources = rag.query(request.query, session_id)
         return QueryResponse(answer=answer, sources=sources, session_id=session_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -226,14 +220,8 @@ async def query_documents(request: QueryRequest):
 
 @app.on_event("startup")
 async def startup_event():
-    docs_path = "../docs"
-    if os.path.exists(docs_path):
-        print("Loading knowledge base documents...")
-        try:
-            courses, chunks = rag_system.add_course_folder(docs_path, clear_existing=False)
-            print(f"Loaded {courses} documents with {chunks} chunks")
-        except Exception as e:
-            print(f"Error loading documents: {e}")
+    print("Checkers Tutor ready.")
+    print("RAG knowledge base will load on first /api/query request.")
 
 
 # ── Static files ──────────────────────────────────────────────────────────────
