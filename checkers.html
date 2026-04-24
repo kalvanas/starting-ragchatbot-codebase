@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Checkers</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#1a1a2e;color:#eee;font-family:system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:12px}
+h1{color:#e94560;font-size:1.4rem;margin-bottom:4px}
+p.sub{color:#888;font-size:.8rem;margin-bottom:10px}
+.board{display:grid;grid-template-columns:repeat(8,1fr);border:3px solid #0f3460;box-shadow:0 6px 24px rgba(0,0,0,.6);width:min(96vw,480px);height:min(96vw,480px)}
+.sq{display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer}
+.sq.light{background:#f0d9b5}
+.sq.dark{background:#b58863}
+.sq.dark:active{background:#c8a060}
+.sq.sel{background:#e8c84a!important}
+.sq.hf{background:#ffe066!important}
+.sq.ht{background:#b8ff80!important}
+.piece{width:80%;height:80%;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2em;pointer-events:none;box-shadow:0 3px 6px rgba(0,0,0,.5),inset 0 -2px 4px rgba(0,0,0,.3)}
+.red{background:radial-gradient(circle at 38% 36%,#ef5350,#b71c1c);border:2px solid #7f0000;color:gold}
+.blk{background:radial-gradient(circle at 38% 36%,#757575,#212121);border:2px solid #000;color:gold}
+.dot{position:absolute;width:35%;height:35%;border-radius:50%;background:rgba(60,220,60,.6);border:2px solid rgba(60,220,60,.9);pointer-events:none}
+.bar{width:min(96vw,480px);margin:8px 0;padding:8px 12px;background:#16213e;border:1px solid #0f3460;border-radius:6px;text-align:center;font-size:.85rem;color:#c0c0d0}
+.ctrls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:10px}
+.btn{padding:8px 18px;border:none;border-radius:6px;font-size:.85rem;font-weight:700;cursor:pointer}
+.bp{background:#e94560;color:#fff}
+.bs{background:#0f3460;color:#cce;border:1px solid #2a5090}
+.btn:disabled{opacity:.4}
+.diff{background:#0f1f3a;color:#cce;border:1px solid #1a3060;border-radius:4px;padding:5px 8px;font-size:.85rem}
+.log{width:min(96vw,480px);max-height:180px;overflow-y:auto;background:#16213e;border:1px solid #0f3460;border-radius:6px;padding:10px;display:flex;flex-direction:column;gap:6px}
+.msg{padding:7px 10px;border-radius:8px;font-size:.82rem;line-height:1.4}
+.mc{background:#1e3a60;color:#d0e4ff;align-self:flex-start;border-radius:2px 8px 8px 8px}
+.ms{background:#2a1a40;color:#c8a0ff;text-align:center;border-radius:8px;font-weight:600}
+.log::-webkit-scrollbar{width:4px}
+.log::-webkit-scrollbar-thumb{background:#0f3460;border-radius:2px}
+</style>
+</head>
+<body>
+<h1>Checkers</h1>
+<p class="sub">You = red (bottom) · AI = black (top)</p>
+
+<div id="board" class="board"></div>
+<div id="bar" class="bar">Press New Game to start</div>
+
+<div class="ctrls">
+  <button class="btn bp" onclick="newGame()">New Game</button>
+  <button class="btn bs" id="hintBtn" onclick="doHint()" disabled>Hint</button>
+  <select class="diff" id="diff">
+    <option value="2">Easy</option>
+    <option value="4" selected>Medium</option>
+    <option value="6">Hard</option>
+  </select>
+</div>
+
+<div id="log" class="log"></div>
+
+<script>
+// ── Constants ─────────────────────────────────────────────────
+const E=0,R=1,RK=2,B=3,BK=4;
+
+// ── Game state ────────────────────────────────────────────────
+let board,selected,legalMoves,hint,over,waiting;
+
+function init(){
+  board=Array.from({length:8},(_,r)=>Array.from({length:8},(_,c)=>{
+    if((r+c)%2!==1)return E;
+    if(r<3)return B;
+    if(r>4)return R;
+    return E;
+  }));
+  selected=null;legalMoves=[];hint=null;over=false;waiting=false;
+}
+
+// ── Move logic ────────────────────────────────────────────────
+function dirs(p){
+  if(p===R)return[[-1,-1],[-1,1]];
+  if(p===B)return[[1,-1],[1,1]];
+  return[[-1,-1],[-1,1],[1,-1],[1,1]];
+}
+function promote(p,r){
+  if(p===R&&r===0)return RK;
+  if(p===B&&r===7)return BK;
+  return p;
+}
+function isRed(p){return p===R||p===RK}
+function isBlk(p){return p===B||p===BK}
+
+function allMoves(bd,red){
+  const mine=red?isRed:isBlk, enemy=red?isBlk:isRed;
+  const caps=[];
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++)if(mine(bd[r][c]))caps.push(...findCaps(bd,r,c,red,new Set,[r,c]));
+  if(caps.length)return caps;
+  const simple=[];
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++){
+    const p=bd[r][c]; if(!mine(p))continue;
+    for(const[dr,dc]of dirs(p)){
+      const nr=r+dr,nc=c+dc;
+      if(nr>=0&&nr<8&&nc>=0&&nc<8&&bd[nr][nc]===E){
+        const nb=applySimple(bd,r,c,nr,nc);
+        simple.push({from:[r,c],to:[nr,nc],cap:[],board:nb});
+      }
+    }
+  }
+  return simple;
+}
+
+function findCaps(bd,r,c,red,capSet,path){
+  const p=bd[r][c], enemy=red?isBlk:isRed, found=[];
+  for(const[dr,dc]of dirs(p)){
+    const mr=r+dr,mc=c+dc,lr=r+2*dr,lc=c+2*dc;
+    const key=`${mr},${mc}`;
+    if(mr<0||mr>7||mc<0||mc>7||lr<0||lr>7||lc<0||lc>7)continue;
+    if(capSet.has(key)||!enemy(bd[mr][mc])||bd[lr][lc]!==E)continue;
+    const nb=applySimple(bd,r,c,lr,lc);
+    nb[mr][mc]=E;
+    const np=promote(p,lr);
+    nb[lr][lc]=np;
+    const ns=new Set([...capSet,key]);
+    const npath=[...path,lr,lc];
+    if(np!==p){found.push({from:[path[0],path[1]],to:[lr,lc],cap:[[mr,mc],...[...capSet].map(k=>k.split(',').map(Number))],board:nb});continue;}
+    const more=findCaps(nb,lr,lc,red,ns,npath);
+    if(more.length)found.push(...more);
+    else found.push({from:[path[0],path[1]],to:[lr,lc],cap:[[mr,mc],...[...capSet].map(k=>k.split(',').map(Number))],board:nb});
+  }
+  return found;
+}
+
+function applySimple(bd,r,c,nr,nc){
+  const nb=bd.map(row=>[...row]);
+  nb[nr][nc]=promote(nb[r][c],nr);
+  nb[r][c]=E;
+  return nb;
+}
+
+function hasWon(bd,red){return allMoves(bd,red).length===0;}
+
+// ── AI (minimax) ──────────────────────────────────────────────
+function score(bd){
+  let s=0;
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++){
+    const p=bd[r][c];
+    if(p===R)s-=1+(.04*(7-r));
+    else if(p===RK)s-=1.75;
+    else if(p===B)s+=1+(.04*r);
+    else if(p===BK)s+=1.75;
+  }
+  return s;
+}
+function minimax(bd,depth,alpha,beta,maxing){
+  const moves=allMoves(bd,!maxing);
+  if(!depth||!moves.length)return[score(bd),null];
+  let best=null,bestV=maxing?-Infinity:Infinity;
+  for(const m of moves){
+    const[v]=minimax(m.board,depth-1,alpha,beta,!maxing);
+    if(maxing?v>bestV:v<bestV){bestV=v;best=m;}
+    if(maxing)alpha=Math.max(alpha,v);else beta=Math.min(beta,v);
+    if(beta<=alpha)break;
+  }
+  return[bestV,best];
+}
+function aiMove(bd){
+  const depth=parseInt(document.getElementById('diff').value);
+  const[,m]=minimax(bd,depth,-Infinity,Infinity,true);
+  return m;
+}
+function bestRed(bd){
+  const[,m]=minimax(bd,3,-Infinity,Infinity,false);
+  return m;
+}
+
+// ── Render ────────────────────────────────────────────────────
+function render(){
+  const el=document.getElementById('board');
+  el.innerHTML='';
+  const sq=min96=Math.floor(Math.min(window.innerWidth*0.96,480)/8);
+  el.style.gridTemplateColumns=`repeat(8,${sq}px)`;
+  el.style.width=el.style.height=`${sq*8}px`;
+
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++){
+    const d=document.createElement('div');
+    const dark=(r+c)%2===1;
+    d.className='sq '+(dark?'dark':'light');
+    d.style.width=d.style.height=sq+'px';
+
+    const p=board[r][c];
+    if(p){
+      const pe=document.createElement('div');
+      pe.className='piece '+(isRed(p)?'red':'blk');
+      pe.textContent=(p===RK||p===BK)?'♛':'';
+      d.appendChild(pe);
+    }
+    if(selected&&selected[0]===r&&selected[1]===c)d.classList.add('sel');
+    if(hint){if(hint.from[0]===r&&hint.from[1]===c)d.classList.add('hf');if(hint.to[0]===r&&hint.to[1]===c)d.classList.add('ht');}
+    if(dark&&legalMoves.some(m=>m.to[0]===r&&m.to[1]===c)){
+      const dot=document.createElement('div');dot.className='dot';d.appendChild(dot);
+    }
+    if(dark)d.addEventListener('click',()=>click(r,c));
+    el.appendChild(d);
+  }
+}
+
+// ── Click ─────────────────────────────────────────────────────
+function click(r,c){
+  if(over||waiting)return;
+  const p=board[r][c];
+  if(selected){
+    const mv=legalMoves.find(m=>m.to[0]===r&&m.to[1]===c);
+    if(mv){doMove(mv);return;}
+  }
+  if(isRed(p)){
+    selected=[r,c];hint=null;
+    const all=allMoves(board,true);
+    legalMoves=all.filter(m=>m.from[0]===r&&m.from[1]===c);
+    render();return;
+  }
+  selected=null;legalMoves=[];render();
+}
+
+function doMove(mv){
+  waiting=true;selected=null;legalMoves=[];hint=null;
+  board=mv.board;render();
+  setBar('AI thinking…');
+  if(hasWon(board,false)){over=true;setBar('You win!');log('You win! Well played!','ms');waiting=false;return;}
+  setTimeout(()=>{
+    const am=aiMove(board);
+    if(!am){over=true;setBar('You win!');log('AI has no moves — you win!','ms');waiting=false;return;}
+    board=am.board;render();
+    if(hasWon(board,true)){over=true;setBar('AI wins');log('AI wins this one — keep practicing!','ms');}
+    else setBar('Your turn');
+    waiting=false;
+  },400);
+}
+
+// ── Controls ──────────────────────────────────────────────────
+function newGame(){
+  init();render();setBar('Your turn — tap a red piece');
+  document.getElementById('hintBtn').disabled=false;
+  clearLog();log('Game started! You are red (bottom). Tap a piece to see moves.','mc');
+}
+
+function doHint(){
+  if(over||waiting)return;
+  const m=bestRed(board);
+  if(m){hint={from:m.from,to:m.to};selected=null;legalMoves=[];render();log(`Hint: (${m.from}) → (${m.to}). Yellow = suggestion.`,'mc');}
+}
+
+// ── UI helpers ────────────────────────────────────────────────
+function setBar(t){document.getElementById('bar').textContent=t;}
+function log(t,cls='mc'){
+  const d=document.createElement('div');d.className='msg '+cls;d.textContent=t;
+  const l=document.getElementById('log');l.appendChild(d);l.scrollTop=l.scrollHeight;
+}
+function clearLog(){document.getElementById('log').innerHTML='';}
+
+// ── Boot ──────────────────────────────────────────────────────
+log('Welcome! Press New Game to play.','mc');
+</script>
+</body>
+</html>
