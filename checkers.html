@@ -6,46 +6,57 @@
 <title>Checkers</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:#1a1a2e;color:#eee;font-family:system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:12px}
-h1{color:#e94560;font-size:1.4rem;margin-bottom:4px}
-p.sub{color:#888;font-size:.8rem;margin-bottom:10px}
-.board{display:grid;grid-template-columns:repeat(8,1fr);border:3px solid #0f3460;box-shadow:0 6px 24px rgba(0,0,0,.6);width:min(96vw,480px);height:min(96vw,480px)}
-.sq{display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer}
+body{background:#1a1a2e;color:#eee;font-family:system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:12px;gap:8px}
+h1{color:#e9c46a;font-size:1.4rem}
+p.sub{color:#888;font-size:.78rem}
+.board{display:grid;grid-template-columns:repeat(8,1fr);border:3px solid #0f3460;box-shadow:0 6px 24px rgba(0,0,0,.6)}
+.sq{display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;transition:background .15s}
 .sq.light{background:#f0d9b5}
 .sq.dark{background:#b58863}
-.sq.dark:active{background:#c8a060}
 .sq.sel{background:#e8c84a!important}
-.sq.hf{background:#ffe066!important}
-.sq.ht{background:#b8ff80!important}
-.piece{width:80%;height:80%;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2em;pointer-events:none;box-shadow:0 3px 6px rgba(0,0,0,.5),inset 0 -2px 4px rgba(0,0,0,.3)}
-.red{background:radial-gradient(circle at 38% 36%,#ef5350,#b71c1c);border:2px solid #7f0000;color:gold}
-.blk{background:radial-gradient(circle at 38% 36%,#757575,#212121);border:2px solid #000;color:gold}
-.dot{position:absolute;width:35%;height:35%;border-radius:50%;background:rgba(60,220,60,.6);border:2px solid rgba(60,220,60,.9);pointer-events:none}
-.bar{width:min(96vw,480px);margin:8px 0;padding:8px 12px;background:#16213e;border:1px solid #0f3460;border-radius:6px;text-align:center;font-size:.85rem;color:#c0c0d0}
-.ctrls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:10px}
-.btn{padding:8px 18px;border:none;border-radius:6px;font-size:.85rem;font-weight:700;cursor:pointer}
-.bp{background:#e94560;color:#fff}
-.bs{background:#0f3460;color:#cce;border:1px solid #2a5090}
-.btn:disabled{opacity:.4}
+.sq.hf{outline:3px solid #ffe066;outline-offset:-3px;background:#c9a227!important}
+.sq.ht{outline:3px solid #90ee90;outline-offset:-3px;background:#5a8a5a!important}
+/* White pieces */
+.piece{width:82%;height:82%;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1em;pointer-events:none;position:relative;transition:transform .1s}
+.wht{background:radial-gradient(circle at 35% 32%,#ffffff,#c8c8c8);border:3px solid #999;color:#333;box-shadow:0 3px 8px rgba(0,0,0,.4),inset 0 -2px 5px rgba(0,0,0,.15)}
+.blk{background:radial-gradient(circle at 35% 32%,#666,#1a1a1a);border:3px solid #000;color:#e9c46a;box-shadow:0 3px 8px rgba(0,0,0,.5),inset 0 -2px 5px rgba(0,0,0,.3)}
+.sq.sel .piece{transform:scale(1.1);box-shadow:0 0 0 3px #e8c84a,0 4px 10px rgba(0,0,0,.5)}
+/* Legal move dot */
+.dot{position:absolute;width:32%;height:32%;border-radius:50%;background:rgba(40,200,40,.65);border:2px solid rgba(40,200,40,1);pointer-events:none;z-index:2}
+.dot.capdot{background:rgba(255,100,30,.65);border-color:rgba(255,140,30,1);width:40%;height:40%}
+/* Status */
+.bar{width:100%;padding:7px 12px;background:#16213e;border:1px solid #0f3460;border-radius:6px;text-align:center;font-size:.85rem;color:#c0c0d0}
+/* Controls */
+.ctrls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:.85rem;font-weight:700;cursor:pointer}
+.bp{background:#e94560;color:#fff}.bs{background:#0f3460;color:#cce;border:1px solid #2a5090}
+.btn:disabled{opacity:.4;cursor:default}
 .diff{background:#0f1f3a;color:#cce;border:1px solid #1a3060;border-radius:4px;padding:5px 8px;font-size:.85rem}
-.log{width:min(96vw,480px);max-height:180px;overflow-y:auto;background:#16213e;border:1px solid #0f3460;border-radius:6px;padding:10px;display:flex;flex-direction:column;gap:6px}
-.msg{padding:7px 10px;border-radius:8px;font-size:.82rem;line-height:1.4}
-.mc{background:#1e3a60;color:#d0e4ff;align-self:flex-start;border-radius:2px 8px 8px 8px}
-.ms{background:#2a1a40;color:#c8a0ff;text-align:center;border-radius:8px;font-weight:600}
+/* Log */
+.log{width:100%;max-height:200px;overflow-y:auto;background:#0f1a30;border:1px solid #0f3460;border-radius:6px;padding:8px;display:flex;flex-direction:column;gap:5px}
+.msg{padding:6px 10px;border-radius:7px;font-size:.82rem;line-height:1.45;word-break:break-word}
+.mc{background:#1e3a60;color:#d0e8ff;border-radius:2px 7px 7px 7px}
+.mh{background:#1a3a1a;color:#90ee90;border-radius:2px 7px 7px 7px;font-weight:600}
+.ms{background:#2a1a40;color:#c8a0ff;text-align:center;border-radius:7px;font-weight:600}
 .log::-webkit-scrollbar{width:4px}
 .log::-webkit-scrollbar-thumb{background:#0f3460;border-radius:2px}
+/* Legend */
+.leg{font-size:.75rem;color:#777;display:flex;gap:12px;align-items:center}
+.lp{display:inline-block;width:14px;height:14px;border-radius:50%;vertical-align:middle;margin-right:3px}
+.lwht{background:#d0d0d0;border:2px solid #999}
+.lblk{background:#333;border:2px solid #000}
 </style>
 </head>
 <body>
-<h1>Checkers</h1>
-<p class="sub">You = red (bottom) · AI = black (top)</p>
+<h1>Checkers Tutor</h1>
+<p class="sub"><span class="lp lwht"></span>You (white, move up) &nbsp; <span class="lp lblk"></span>AI (black, move down)</p>
 
 <div id="board" class="board"></div>
-<div id="bar" class="bar">Press New Game to start</div>
+<div id="bar" class="bar">Tap New Game to start</div>
 
 <div class="ctrls">
   <button class="btn bp" onclick="newGame()">New Game</button>
-  <button class="btn bs" id="hintBtn" onclick="doHint()" disabled>Hint</button>
+  <button class="btn bs" id="hintBtn" onclick="doHint()" disabled>Best Move</button>
   <select class="diff" id="diff">
     <option value="2">Easy</option>
     <option value="4" selected>Medium</option>
@@ -56,48 +67,52 @@ p.sub{color:#888;font-size:.8rem;margin-bottom:10px}
 <div id="log" class="log"></div>
 
 <script>
-// ── Constants ─────────────────────────────────────────────────
-const E=0,R=1,RK=2,B=3,BK=4;
+const E=0,W=1,WK=2,B=3,BK=4; // W=white(you), B=black(AI)
 
-// ── Game state ────────────────────────────────────────────────
-let board,selected,legalMoves,hint,over,waiting;
+let board,selected,legalMoves,hint,over,waiting,sqPx;
 
 function init(){
   board=Array.from({length:8},(_,r)=>Array.from({length:8},(_,c)=>{
     if((r+c)%2!==1)return E;
     if(r<3)return B;
-    if(r>4)return R;
+    if(r>4)return W;
     return E;
   }));
   selected=null;legalMoves=[];hint=null;over=false;waiting=false;
 }
 
-// ── Move logic ────────────────────────────────────────────────
-function dirs(p){
-  if(p===R)return[[-1,-1],[-1,1]];
+// ── Direction helpers ─────────────────────────────────────────
+function fwdDirs(p){ // forward-only (for simple moves)
+  if(p===W)return[[-1,-1],[-1,1]];
   if(p===B)return[[1,-1],[1,1]];
-  return[[-1,-1],[-1,1],[1,-1],[1,1]];
+  return[[-1,-1],[-1,1],[1,-1],[1,1]]; // kings: all
 }
+const ALL4=[[-1,-1],[-1,1],[1,-1],[1,1]];
+
 function promote(p,r){
-  if(p===R&&r===0)return RK;
+  if(p===W&&r===0)return WK;
   if(p===B&&r===7)return BK;
   return p;
 }
-function isRed(p){return p===R||p===RK}
-function isBlk(p){return p===B||p===BK}
+function isW(p){return p===W||p===WK}
+function isB(p){return p===B||p===BK}
 
-function allMoves(bd,red){
-  const mine=red?isRed:isBlk, enemy=red?isBlk:isRed;
+// ── Move generation ───────────────────────────────────────────
+function allMoves(bd,white){
+  const mine=white?isW:isB;
+  // Captures first (all pieces capture in ALL directions)
   const caps=[];
-  for(let r=0;r<8;r++)for(let c=0;c<8;c++)if(mine(bd[r][c]))caps.push(...findCaps(bd,r,c,red,new Set,[r,c]));
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++)
+    if(mine(bd[r][c]))caps.push(...findCaps(bd,r,c,white,new Set,[r,c]));
   if(caps.length)return caps;
+  // Simple moves (forward only for men, all for kings)
   const simple=[];
   for(let r=0;r<8;r++)for(let c=0;c<8;c++){
-    const p=bd[r][c]; if(!mine(p))continue;
-    for(const[dr,dc]of dirs(p)){
+    const p=bd[r][c];if(!mine(p))continue;
+    for(const[dr,dc]of fwdDirs(p)){
       const nr=r+dr,nc=c+dc;
       if(nr>=0&&nr<8&&nc>=0&&nc<8&&bd[nr][nc]===E){
-        const nb=applySimple(bd,r,c,nr,nc);
+        const nb=applyS(bd,r,c,nr,nc);
         simple.push({from:[r,c],to:[nr,nc],cap:[],board:nb});
       }
     }
@@ -105,97 +120,162 @@ function allMoves(bd,red){
   return simple;
 }
 
-function findCaps(bd,r,c,red,capSet,path){
-  const p=bd[r][c], enemy=red?isBlk:isRed, found=[];
-  for(const[dr,dc]of dirs(p)){
+function findCaps(bd,r,c,white,capSet,path){
+  const p=bd[r][c],enemy=white?isB:isW,found=[];
+  for(const[dr,dc]of ALL4){ // all pieces capture backwards too
     const mr=r+dr,mc=c+dc,lr=r+2*dr,lc=c+2*dc;
-    const key=`${mr},${mc}`;
+    const key=mr+','+mc;
     if(mr<0||mr>7||mc<0||mc>7||lr<0||lr>7||lc<0||lc>7)continue;
     if(capSet.has(key)||!enemy(bd[mr][mc])||bd[lr][lc]!==E)continue;
-    const nb=applySimple(bd,r,c,lr,lc);
+    const nb=applyS(bd,r,c,lr,lc);
     nb[mr][mc]=E;
     const np=promote(p,lr);
     nb[lr][lc]=np;
     const ns=new Set([...capSet,key]);
-    const npath=[...path,lr,lc];
-    if(np!==p){found.push({from:[path[0],path[1]],to:[lr,lc],cap:[[mr,mc],...[...capSet].map(k=>k.split(',').map(Number))],board:nb});continue;}
-    const more=findCaps(nb,lr,lc,red,ns,npath);
+    if(np!==p){ // promoted mid-jump: stop
+      found.push({from:[path[0],path[1]],to:[lr,lc],cap:[[mr,mc],...[...capSet].map(k=>k.split(',').map(Number))],board:nb});
+      continue;
+    }
+    const more=findCaps(nb,lr,lc,white,ns,[...path,lr,lc]);
     if(more.length)found.push(...more);
     else found.push({from:[path[0],path[1]],to:[lr,lc],cap:[[mr,mc],...[...capSet].map(k=>k.split(',').map(Number))],board:nb});
   }
   return found;
 }
 
-function applySimple(bd,r,c,nr,nc){
+function applyS(bd,r,c,nr,nc){
   const nb=bd.map(row=>[...row]);
   nb[nr][nc]=promote(nb[r][c],nr);
   nb[r][c]=E;
   return nb;
 }
 
-function hasWon(bd,red){return allMoves(bd,red).length===0;}
+function hasWon(bd,white){return allMoves(bd,white).length===0;}
 
-// ── AI (minimax) ──────────────────────────────────────────────
+// ── AI ────────────────────────────────────────────────────────
 function score(bd){
   let s=0;
   for(let r=0;r<8;r++)for(let c=0;c<8;c++){
     const p=bd[r][c];
-    if(p===R)s-=1+(.04*(7-r));
-    else if(p===RK)s-=1.75;
-    else if(p===B)s+=1+(.04*r);
-    else if(p===BK)s+=1.75;
+    if(p===W)s-=1+.04*(7-r);
+    else if(p===WK)s-=1.8;
+    else if(p===B)s+=1+.04*r;
+    else if(p===BK)s+=1.8;
   }
   return s;
 }
-function minimax(bd,depth,alpha,beta,maxing){
-  const moves=allMoves(bd,!maxing);
+function minimax(bd,depth,a,b,max){
+  const moves=allMoves(bd,!max);
   if(!depth||!moves.length)return[score(bd),null];
-  let best=null,bestV=maxing?-Infinity:Infinity;
+  let best=null,bv=max?-Infinity:Infinity;
   for(const m of moves){
-    const[v]=minimax(m.board,depth-1,alpha,beta,!maxing);
-    if(maxing?v>bestV:v<bestV){bestV=v;best=m;}
-    if(maxing)alpha=Math.max(alpha,v);else beta=Math.min(beta,v);
-    if(beta<=alpha)break;
+    const[v]=minimax(m.board,depth-1,a,b,!max);
+    if(max?v>bv:v<bv){bv=v;best=m;}
+    if(max)a=Math.max(a,v);else b=Math.min(b,v);
+    if(b<=a)break;
   }
-  return[bestV,best];
+  return[bv,best];
 }
-function aiMove(bd){
-  const depth=parseInt(document.getElementById('diff').value);
-  const[,m]=minimax(bd,depth,-Infinity,Infinity,true);
-  return m;
+function aiMove(bd){const d=+document.getElementById('diff').value;const[,m]=minimax(bd,d,-Infinity,Infinity,true);return m;}
+function bestWhite(bd){const[,m]=minimax(bd,4,-Infinity,Infinity,false);return m;}
+
+// ── Move explanation ──────────────────────────────────────────
+function explainMove(mv,bd){
+  const caps=mv.cap||[];
+  const[fr,fc]=mv.from,[tr,tc]=mv.to;
+  const piece=bd[fr][fc];
+  const parts=[];
+
+  if(caps.length>1) parts.push(`Capture ${caps.length} pieces in one turn — huge gain!`);
+  else if(caps.length===1) parts.push('Jump over and capture an opponent piece.');
+
+  const wasKing=piece===WK;
+  const becomesKing=!wasKing&&tr===0;
+  if(becomesKing) parts.push('This promotes your piece to a KING — it can now move in any direction!');
+
+  if(!caps.length){
+    const rowsLeft=tr; // white moves toward row 0
+    if(rowsLeft<=1&&!wasKing) parts.push(`One more move to become a King!`);
+    else if(rowsLeft<=2&&!wasKing) parts.push(`Getting close to the king row (${rowsLeft} rows away).`);
+
+    // Center control
+    const centerC=tc>=2&&tc<=5,centerR=tr>=2&&tr<=5;
+    if(centerC&&centerR) parts.push('Good center position — more options from here.');
+
+    if(wasKing) parts.push('King repositioning.');
+  }
+
+  // Backward capture note
+  if(caps.length&&tr>fr) parts.push('Nice backward capture!');
+
+  if(!parts.length) parts.push('Solid move forward.');
+  return parts.join(' ');
 }
-function bestRed(bd){
-  const[,m]=minimax(bd,3,-Infinity,Infinity,false);
-  return m;
+
+function explainHint(mv,bd){
+  const caps=mv.cap||[];
+  const[fr,fc]=mv.from,[tr,tc]=mv.to;
+  const piece=bd[fr][fc];
+  const why=[];
+
+  if(caps.length>1) why.push(`Best move: capture ${caps.length} pieces! Multi-jump from (${fr},${fc}) to (${tr},${tc}).`);
+  else if(caps.length===1) why.push(`Best move: capture the opponent at (${caps[0][0]},${caps[0][1]}). Always take captures when available.`);
+  else{
+    why.push(`Best move: (${fr},${fc}) → (${tr},${tc}).`);
+    if(tr===0&&piece===W) why.push('This promotes to a King!');
+    else if(tc>=2&&tc<=5) why.push('Controls the center — center pieces threaten more squares.');
+    else why.push('Advances your piece while staying safe.');
+  }
+
+  if(!caps.length){
+    // Check if it blocks an opponent
+    const threats=allMoves(bd,false); // AI moves
+    const threatens=threats.some(m=>m.to[0]===tr&&m.to[1]===tc);
+    if(threatens) why.push('Note: this square is reachable by AI — stay alert.');
+  }
+
+  return why.join(' ');
 }
 
 // ── Render ────────────────────────────────────────────────────
+function calcSq(){return Math.floor(Math.min(window.innerWidth*0.96,480)/8);}
+
 function render(){
   const el=document.getElementById('board');
   el.innerHTML='';
-  const sq=min96=Math.floor(Math.min(window.innerWidth*0.96,480)/8);
-  el.style.gridTemplateColumns=`repeat(8,${sq}px)`;
-  el.style.width=el.style.height=`${sq*8}px`;
+  sqPx=calcSq();
+  el.style.gridTemplateColumns=`repeat(8,${sqPx}px)`;
+  el.style.width=el.style.height=`${sqPx*8}px`;
 
   for(let r=0;r<8;r++)for(let c=0;c<8;c++){
     const d=document.createElement('div');
     const dark=(r+c)%2===1;
     d.className='sq '+(dark?'dark':'light');
-    d.style.width=d.style.height=sq+'px';
+    d.style.width=d.style.height=sqPx+'px';
 
     const p=board[r][c];
-    if(p){
+    if(p!==E){
       const pe=document.createElement('div');
-      pe.className='piece '+(isRed(p)?'red':'blk');
-      pe.textContent=(p===RK||p===BK)?'♛':'';
+      pe.className='piece '+(isW(p)?'wht':'blk');
+      pe.textContent=(p===WK||p===BK)?'♛':'';
       d.appendChild(pe);
     }
-    if(selected&&selected[0]===r&&selected[1]===c)d.classList.add('sel');
-    if(hint){if(hint.from[0]===r&&hint.from[1]===c)d.classList.add('hf');if(hint.to[0]===r&&hint.to[1]===c)d.classList.add('ht');}
-    if(dark&&legalMoves.some(m=>m.to[0]===r&&m.to[1]===c)){
-      const dot=document.createElement('div');dot.className='dot';d.appendChild(dot);
+
+    if(selected&&selected[0]===r&&selected[1]===c) d.classList.add('sel');
+    if(hint){
+      if(hint.from[0]===r&&hint.from[1]===c) d.classList.add('hf');
+      if(hint.to[0]===r&&hint.to[1]===c) d.classList.add('ht');
     }
-    if(dark)d.addEventListener('click',()=>click(r,c));
+
+    if(dark){
+      const mv=legalMoves.find(m=>m.to[0]===r&&m.to[1]===c);
+      if(mv){
+        const dot=document.createElement('div');
+        dot.className='dot'+(mv.cap&&mv.cap.length?' capdot':'');
+        d.appendChild(dot);
+      }
+      d.addEventListener('click',()=>click(r,c));
+    }
     el.appendChild(d);
   }
 }
@@ -204,57 +284,101 @@ function render(){
 function click(r,c){
   if(over||waiting)return;
   const p=board[r][c];
+
   if(selected){
     const mv=legalMoves.find(m=>m.to[0]===r&&m.to[1]===c);
     if(mv){doMove(mv);return;}
   }
-  if(isRed(p)){
+
+  if(isW(p)){
     selected=[r,c];hint=null;
     const all=allMoves(board,true);
     legalMoves=all.filter(m=>m.from[0]===r&&m.from[1]===c);
-    render();return;
+    render();
+
+    if(legalMoves.length===0){
+      log('That piece has no legal moves right now — pick another.','mc');
+    } else {
+      const capMoves=legalMoves.filter(m=>m.cap&&m.cap.length);
+      if(capMoves.length){
+        log(`${capMoves.length} capture${capMoves.length>1?'s':''} available — orange dot${capMoves.length>1?'s':''} show where to jump. Captures are mandatory!`,'mc');
+      } else {
+        log(`${legalMoves.length} move${legalMoves.length>1?'s':''} available — green dot${legalMoves.length>1?'s':''} show where you can go.`,'mc');
+        // Explain each move briefly if only a couple
+        if(legalMoves.length<=3){
+          legalMoves.forEach((mv,i)=>{
+            log(`Option ${i+1}: Move to (${mv.to[0]},${mv.to[1]}) — ${explainMove(mv,board)}`,'mc');
+          });
+        }
+      }
+    }
+    return;
   }
+
   selected=null;legalMoves=[];render();
 }
 
+// ── Execute move ──────────────────────────────────────────────
 function doMove(mv){
+  const explanation=explainMove(mv,board);
   waiting=true;selected=null;legalMoves=[];hint=null;
   board=mv.board;render();
   setBar('AI thinking…');
-  if(hasWon(board,false)){over=true;setBar('You win!');log('You win! Well played!','ms');waiting=false;return;}
+
+  if(hasWon(board,false)){
+    over=true;setBar('You win!');
+    log('You win! Well played!','ms');
+    waiting=false;return;
+  }
+
   setTimeout(()=>{
     const am=aiMove(board);
     if(!am){over=true;setBar('You win!');log('AI has no moves — you win!','ms');waiting=false;return;}
     board=am.board;render();
-    if(hasWon(board,true)){over=true;setBar('AI wins');log('AI wins this one — keep practicing!','ms');}
-    else setBar('Your turn');
+
+    const capText=am.cap&&am.cap.length?` (captured ${am.cap.length} piece${am.cap.length>1?'s':''})` : '';
+    log(`Your move: ${explanation}`,'mc');
+    log(`AI moved from (${am.from[0]},${am.from[1]}) to (${am.to[0]},${am.to[1]})${capText}.`,'mc');
+
+    if(hasWon(board,true)){
+      over=true;setBar('AI wins');
+      log('AI wins this round — keep practicing!','ms');
+    } else {
+      setBar('Your turn — tap a white piece');
+    }
     waiting=false;
-  },400);
+  },500);
 }
 
 // ── Controls ──────────────────────────────────────────────────
 function newGame(){
-  init();render();setBar('Your turn — tap a red piece');
+  init();render();
+  setBar('Your turn — tap a white piece');
   document.getElementById('hintBtn').disabled=false;
-  clearLog();log('Game started! You are red (bottom). Tap a piece to see moves.','mc');
+  clearLog();
+  log('New game! You are white (bottom), AI is black (top). White moves UP. Tap a piece to see your options. Orange dots = captures (mandatory). Green dots = regular moves.','mc');
 }
 
 function doHint(){
   if(over||waiting)return;
-  const m=bestRed(board);
-  if(m){hint={from:m.from,to:m.to};selected=null;legalMoves=[];render();log(`Hint: (${m.from}) → (${m.to}). Yellow = suggestion.`,'mc');}
+  const m=bestWhite(board);
+  if(!m){log('No moves available.','mc');return;}
+  hint={from:m.from,to:m.to};
+  selected=null;legalMoves=[];
+  render();
+  log(explainHint(m,board),'mh');
 }
 
-// ── UI helpers ────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────
 function setBar(t){document.getElementById('bar').textContent=t;}
 function log(t,cls='mc'){
   const d=document.createElement('div');d.className='msg '+cls;d.textContent=t;
   const l=document.getElementById('log');l.appendChild(d);l.scrollTop=l.scrollHeight;
 }
 function clearLog(){document.getElementById('log').innerHTML='';}
+window.addEventListener('resize',()=>{if(board)render();});
 
-// ── Boot ──────────────────────────────────────────────────────
-log('Welcome! Press New Game to play.','mc');
+log('Welcome! Tap New Game to start. Tap any white piece to see where it can move and why.','mc');
 </script>
 </body>
 </html>
